@@ -1,0 +1,23 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@traceguard/shared-types": ["../../packages/shared-types/src/index.ts"],
+      "@traceguard/analyzer": ["../../packages/analyzer/src/index.ts"],
+      "@traceguard/tracker-classifier": ["../../packages/tracker-classifier/src/index.ts"],
+      "@traceguard/scoring-engine": ["../../packages/scoring-engine/src/index.ts"]
+    },
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
+    "types": ["chrome", "node"]
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx", "vite.config.ts"],
+  "exclude": ["node_modules", "dist"]
+}

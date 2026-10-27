@@ -1,0 +1,66 @@
+{
+  "manifest_version": 3,
+  "name": "TraceGuard",
+  "short_name": "TraceGuard",
+  "version": "0.1.0",
+  "description": "See what a website does behind the page. Local privacy & security intelligence — no data leaves your browser by default.",
+
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "TraceGuard — Web Privacy & Security Intelligence",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+
+  "content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+
+  "permissions": [
+    "activeTab",
+    "tabs",
+    "cookies",
+    "storage",
+    "webRequest"
+  ],
+
+  "host_permissions": [
+    "<all_urls>"
+  ],
+
+  "web_accessible_resources": [
+    {
+      "resources": ["fullview.html", "options.html", "assets/*"],
+      "matches": ["<all_urls>"]
+    }
+  ],
+
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'none'; base-uri 'none';"
+  },
+
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
+  }
+}
