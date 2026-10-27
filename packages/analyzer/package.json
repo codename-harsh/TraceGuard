@@ -1,0 +1,27 @@
+{
+  "name": "@traceguard/analyzer",
+  "version": "0.1.0",
+  "description": "eTLD+1 domain analysis and sanitization/redaction layer for TraceGuard",
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc --project tsconfig.json",
+    "typecheck": "tsc --project tsconfig.check.json",
+    "clean": "rimraf dist"
+  },
+  "dependencies": {
+    "@traceguard/shared-types": "workspace:*",
+    "tldts": "^6.1.32"
+  },
+  "devDependencies": {
+    "rimraf": "^5.0.7",
+    "typescript": "^5.5.2"
+  }
+}

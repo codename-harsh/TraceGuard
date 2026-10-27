@@ -1,0 +1,80 @@
+{
+  "version": "1.0.0",
+  "description": "TraceGuard scoring penalty rules. Score starts at 100; penalties are subtracted. Each category has a maximum penalty cap.",
+  "baseScore": 100,
+  "categories": {
+    "trackers": {
+      "maxPenalty": 25,
+      "description": "Penalty for tracker domains detected",
+      "thresholds": [
+        { "count": 1, "penalty": 5 },
+        { "count": 3, "penalty": 10 },
+        { "count": 6, "penalty": 16 },
+        { "count": 10, "penalty": 20 },
+        { "count": 15, "penalty": 25 }
+      ]
+    },
+    "insecureTransport": {
+      "maxPenalty": 25,
+      "description": "Penalty for insecure HTTP requests (mixed content, non-HTTPS subresources)",
+      "thresholds": [
+        { "count": 1, "penalty": 8 },
+        { "count": 3, "penalty": 15 },
+        { "count": 6, "penalty": 20 },
+        { "count": 10, "penalty": 25 }
+      ]
+    },
+    "thirdPartyCookies": {
+      "maxPenalty": 15,
+      "description": "Penalty for third-party persistent cookies (cross-site tracking indicator)",
+      "thresholds": [
+        { "count": 1, "penalty": 4 },
+        { "count": 3, "penalty": 8 },
+        { "count": 6, "penalty": 12 },
+        { "count": 10, "penalty": 15 }
+      ]
+    },
+    "thirdPartyConcentration": {
+      "maxPenalty": 10,
+      "description": "Penalty based on the ratio of third-party to total requests",
+      "ratioThresholds": [
+        { "ratio": 0.2, "penalty": 2 },
+        { "ratio": 0.4, "penalty": 4 },
+        { "ratio": 0.6, "penalty": 7 },
+        { "ratio": 0.8, "penalty": 10 }
+      ]
+    },
+    "cookieConfiguration": {
+      "maxPenalty": 10,
+      "description": "Penalty for cookies missing HttpOnly, Secure flags, or with SameSite=None",
+      "perCookiePenalty": 2,
+      "notes": "Counted per misconfigured cookie, capped at maxPenalty"
+    },
+    "privacyPermissions": {
+      "maxPenalty": 10,
+      "description": "Penalty for privacy-sensitive browser permission grants",
+      "perPermissionPenalty": {
+        "geolocation": 4,
+        "camera": 4,
+        "microphone": 4,
+        "clipboard-read": 2,
+        "notifications": 1,
+        "payment-handler": 2,
+        "persistent-storage": 1,
+        "background-sync": 1,
+        "midi": 1,
+        "clipboard-write": 1,
+        "other": 1
+      }
+    },
+    "storageAndOther": {
+      "maxPenalty": 5,
+      "description": "Penalty for storage indicators and other minor observations",
+      "thresholds": [
+        { "count": 2, "penalty": 2 },
+        { "count": 5, "penalty": 4 },
+        { "count": 8, "penalty": 5 }
+      ]
+    }
+  }
+}

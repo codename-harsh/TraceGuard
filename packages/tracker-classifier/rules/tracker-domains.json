@@ -1,0 +1,315 @@
+{
+  "version": "1.0.0",
+  "description": "TraceGuard tracker domain rules — documented, publicly-known domains only. Data sourced from public lists (EasyList, EasyPrivacy, Disconnect.me). All entries are well-established, publicly documented tracking or CDN services.",
+  "updatedAt": "2024-01-01",
+  "rules": [
+    {
+      "id": "AD-001",
+      "domain": "doubleclick.net",
+      "category": "Advertising",
+      "isTracker": true,
+      "notes": "Google's advertising and display network infrastructure"
+    },
+    {
+      "id": "AD-002",
+      "domain": "googlesyndication.com",
+      "category": "Advertising",
+      "isTracker": true,
+      "notes": "Google AdSense serving infrastructure"
+    },
+    {
+      "id": "AD-003",
+      "domain": "googleadservices.com",
+      "category": "Advertising",
+      "isTracker": true,
+      "notes": "Google Ads conversion tracking and remarketing"
+    },
+    {
+      "id": "AD-004",
+      "domain": "adnxs.com",
+      "category": "Advertising",
+      "isTracker": true,
+      "notes": "Xandr (Microsoft) programmatic advertising platform"
+    },
+    {
+      "id": "AD-005",
+      "domain": "rubiconproject.com",
+      "category": "Advertising",
+      "isTracker": true,
+      "notes": "Magnite (formerly Rubicon Project) SSP/DSP ad exchange"
+    },
+    {
+      "id": "AD-006",
+      "domain": "pubmatic.com",
+      "category": "Advertising",
+      "isTracker": true,
+      "notes": "PubMatic programmatic advertising platform"
+    },
+    {
+      "id": "AD-007",
+      "domain": "criteo.com",
+      "category": "Advertising",
+      "isTracker": true,
+      "notes": "Criteo retargeting and performance advertising"
+    },
+    {
+      "id": "AD-008",
+      "domain": "outbrain.com",
+      "category": "Advertising",
+      "isTracker": true,
+      "notes": "Outbrain content recommendation and native advertising"
+    },
+    {
+      "id": "AN-001",
+      "domain": "google-analytics.com",
+      "category": "Analytics",
+      "isTracker": true,
+      "notes": "Google Analytics web analytics service (UA/GA4)"
+    },
+    {
+      "id": "AN-002",
+      "domain": "googletagmanager.com",
+      "category": "Analytics",
+      "isTracker": true,
+      "notes": "Google Tag Manager — loads and orchestrates other trackers"
+    },
+    {
+      "id": "AN-003",
+      "domain": "segment.com",
+      "category": "Analytics",
+      "isTracker": true,
+      "notes": "Segment customer data platform and analytics pipeline"
+    },
+    {
+      "id": "AN-004",
+      "domain": "amplitude.com",
+      "category": "Analytics",
+      "isTracker": true,
+      "notes": "Amplitude product analytics"
+    },
+    {
+      "id": "AN-005",
+      "domain": "mixpanel.com",
+      "category": "Analytics",
+      "isTracker": true,
+      "notes": "Mixpanel product analytics and event tracking"
+    },
+    {
+      "id": "AN-006",
+      "domain": "hotjar.com",
+      "category": "Session Replay",
+      "isTracker": true,
+      "notes": "Hotjar heatmaps, session recordings, and surveys"
+    },
+    {
+      "id": "AN-007",
+      "domain": "heap.io",
+      "category": "Analytics",
+      "isTracker": true,
+      "notes": "Heap auto-capture analytics platform"
+    },
+    {
+      "id": "AN-008",
+      "domain": "newrelic.com",
+      "category": "Analytics",
+      "isTracker": false,
+      "notes": "New Relic APM and observability platform (technical monitoring)"
+    },
+    {
+      "id": "SR-001",
+      "domain": "fullstory.com",
+      "category": "Session Replay",
+      "isTracker": true,
+      "notes": "FullStory DX Data — records user sessions for replay"
+    },
+    {
+      "id": "SR-002",
+      "domain": "logrocket.com",
+      "category": "Session Replay",
+      "isTracker": true,
+      "notes": "LogRocket session replay and frontend monitoring"
+    },
+    {
+      "id": "SR-003",
+      "domain": "mouseflow.com",
+      "category": "Session Replay",
+      "isTracker": true,
+      "notes": "Mouseflow session replay, heatmaps, and form analytics"
+    },
+    {
+      "id": "SR-004",
+      "domain": "smartlook.com",
+      "category": "Session Replay",
+      "isTracker": true,
+      "notes": "Smartlook session recording and product analytics"
+    },
+    {
+      "id": "SM-001",
+      "domain": "facebook.net",
+      "category": "Social Media",
+      "isTracker": true,
+      "notes": "Meta (Facebook) pixel and SDK — cross-site tracking"
+    },
+    {
+      "id": "SM-002",
+      "domain": "connect.facebook.net",
+      "category": "Social Media",
+      "isTracker": true,
+      "notes": "Meta Facebook Connect SDK CDN"
+    },
+    {
+      "id": "SM-003",
+      "domain": "twitter.com",
+      "category": "Social Media",
+      "isTracker": true,
+      "notes": "X/Twitter widgets and conversion tracking pixel"
+    },
+    {
+      "id": "SM-004",
+      "domain": "linkedin.com",
+      "category": "Social Media",
+      "isTracker": true,
+      "notes": "LinkedIn Insight Tag for B2B conversion tracking"
+    },
+    {
+      "id": "SM-005",
+      "domain": "pinterest.com",
+      "category": "Social Media",
+      "isTracker": true,
+      "notes": "Pinterest Tag for conversion and audience tracking"
+    },
+    {
+      "id": "SM-006",
+      "domain": "tiktok.com",
+      "category": "Social Media",
+      "isTracker": true,
+      "notes": "TikTok Pixel for cross-site tracking and ad attribution"
+    },
+    {
+      "id": "CS-001",
+      "domain": "intercom.io",
+      "category": "Customer Support",
+      "isTracker": true,
+      "notes": "Intercom customer messaging and support chat"
+    },
+    {
+      "id": "CS-002",
+      "domain": "intercom.com",
+      "category": "Customer Support",
+      "isTracker": true,
+      "notes": "Intercom primary domain (chat widget and CDN)"
+    },
+    {
+      "id": "CS-003",
+      "domain": "zendesk.com",
+      "category": "Customer Support",
+      "isTracker": false,
+      "notes": "Zendesk customer support platform (not primarily a tracker)"
+    },
+    {
+      "id": "CS-004",
+      "domain": "freshdesk.com",
+      "category": "Customer Support",
+      "isTracker": false,
+      "notes": "Freshdesk support ticketing platform"
+    },
+    {
+      "id": "CDN-001",
+      "domain": "cloudflare.com",
+      "category": "CDN/Infrastructure",
+      "isTracker": false,
+      "notes": "Cloudflare CDN, DDoS protection, and DNS"
+    },
+    {
+      "id": "CDN-002",
+      "domain": "cloudflare.net",
+      "category": "CDN/Infrastructure",
+      "isTracker": false,
+      "notes": "Cloudflare network infrastructure domain"
+    },
+    {
+      "id": "CDN-003",
+      "domain": "fastly.net",
+      "category": "CDN/Infrastructure",
+      "isTracker": false,
+      "notes": "Fastly CDN edge delivery network"
+    },
+    {
+      "id": "CDN-004",
+      "domain": "akamaized.net",
+      "category": "CDN/Infrastructure",
+      "isTracker": false,
+      "notes": "Akamai CDN media delivery network"
+    },
+    {
+      "id": "CDN-005",
+      "domain": "amazonaws.com",
+      "category": "CDN/Infrastructure",
+      "isTracker": false,
+      "notes": "AWS S3, CloudFront, and other Amazon cloud services"
+    },
+    {
+      "id": "CDN-006",
+      "domain": "azureedge.net",
+      "category": "CDN/Infrastructure",
+      "isTracker": false,
+      "notes": "Microsoft Azure CDN edge network"
+    },
+    {
+      "id": "CDN-007",
+      "domain": "googleusercontent.com",
+      "category": "CDN/Infrastructure",
+      "isTracker": false,
+      "notes": "Google user-generated content CDN (Workspace, Drive)"
+    },
+    {
+      "id": "CON-001",
+      "domain": "jquery.com",
+      "category": "Content",
+      "isTracker": false,
+      "notes": "jQuery official CDN"
+    },
+    {
+      "id": "CON-002",
+      "domain": "bootstrapcdn.com",
+      "category": "Content",
+      "isTracker": false,
+      "notes": "Bootstrap CSS framework CDN"
+    },
+    {
+      "id": "CON-003",
+      "domain": "cdnjs.cloudflare.com",
+      "category": "Content",
+      "isTracker": false,
+      "notes": "Cloudflare cdnjs open-source library CDN"
+    },
+    {
+      "id": "CON-004",
+      "domain": "unpkg.com",
+      "category": "Content",
+      "isTracker": false,
+      "notes": "npm package CDN for open-source libraries"
+    },
+    {
+      "id": "CON-005",
+      "domain": "jsdelivr.net",
+      "category": "Content",
+      "isTracker": false,
+      "notes": "jsDelivr open-source CDN"
+    },
+    {
+      "id": "AN-009",
+      "domain": "clarity.ms",
+      "category": "Session Replay",
+      "isTracker": true,
+      "notes": "Microsoft Clarity session replay and heatmap tool"
+    },
+    {
+      "id": "AD-009",
+      "domain": "snapchat.com",
+      "category": "Advertising",
+      "isTracker": true,
+      "notes": "Snap Pixel for ad conversion tracking"
+    }
+  ]
+}
