@@ -57,3 +57,5 @@ alembic/versions/*.pyc
 # Misc
 *.pem
 .turbo/
+*.db
+*.sqlite
