@@ -1,25 +1,39 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { ThemeToggle } from './ThemeToggle';
 import { Button } from '../ui/Button';
-import { Shield, ShieldAlert, Download, LogIn, LogOut, User, Menu, X } from 'lucide-react';
+import { Shield, ShieldAlert, Download, LogIn, LogOut, User, Menu, X, Search, FileCode2 } from 'lucide-react';
 import { Modal } from '../ui/Modal';
+import { CommandPalette } from '../CommandPalette';
 
 export function Navbar() {
   const pathname = usePathname();
   const { user, isAuthenticated, logout } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [installModalOpen, setInstallModalOpen] = useState(false);
+  const [cmdOpen, setCmdOpen] = useState(false);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        setCmdOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   const navLinks = [
     { href: '/dashboard', label: 'Overview', authRequired: true },
     { href: '/dashboard/scans', label: 'Scans', authRequired: true },
     { href: '/dashboard/compare', label: 'Compare', authRequired: true },
     { href: '/dashboard/analytics', label: 'Analytics', authRequired: true },
+    { href: '/sandbox', label: 'Sandbox', authRequired: false },
     { href: '/dashboard/settings', label: 'Settings', authRequired: true },
     { href: '/privacy', label: 'Privacy Spec', authRequired: false },
   ];
@@ -80,6 +94,20 @@ export function Navbar() {
               <Download className="w-3.5 h-3.5 text-indigo-400" />
               <span>Install Extension</span>
             </Button>
+
+            {/* Quick Cmd+K Palette Trigger */}
+            <button
+              type="button"
+              onClick={() => setCmdOpen(true)}
+              className="flex items-center gap-2 px-2.5 py-1 text-xs text-zinc-400 bg-zinc-900/80 hover:bg-zinc-850 border border-zinc-800 rounded-lg hover:border-zinc-700 transition-colors shadow-sm"
+              title="Quick command palette (Ctrl+K)"
+            >
+              <Search className="w-3.5 h-3.5 text-zinc-400" />
+              <span className="hidden lg:inline text-2xs">Quick Jump...</span>
+              <kbd className="text-3xs font-mono bg-zinc-800 px-1.5 py-0.5 rounded text-zinc-400 border border-zinc-700/60">
+                ⌘K
+              </kbd>
+            </button>
 
             <ThemeToggle />
 
@@ -215,6 +243,9 @@ export function Navbar() {
           </div>
         </div>
       </Modal>
+
+      {/* Global Command Palette */}
+      <CommandPalette isOpen={cmdOpen} onClose={() => setCmdOpen(false)} />
     </>
   );
 }

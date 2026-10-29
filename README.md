@@ -11,7 +11,7 @@
 
 [![Live Demo](https://img.shields.io/badge/Live_Demo-tracegu4rd.vercel.app-7928CA?style=for-the-badge&logo=vercel&logoColor=white)](https://tracegu4rd.vercel.app)
 [![CI Pipeline](https://img.shields.io/badge/CI-Passing-2ea44f?style=for-the-badge&logo=githubactions&logoColor=white)](.github/workflows/ci.yml)
-[![Tests Passing](https://img.shields.io/badge/Tests-162_Passing-brightgreen?style=for-the-badge&logo=vitest&logoColor=white)](tests/)
+[![Tests Passing](https://img.shields.io/badge/Tests-170_Passing-brightgreen?style=for-the-badge&logo=vitest&logoColor=white)](tests/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.5-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](tsconfig.base.json)
 [![Python](https://img.shields.io/badge/Python-3.12-3776AB?style=for-the-badge&logo=python&logoColor=white)](apps/api/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?style=for-the-badge&logo=fastapi&logoColor=white)](apps/api/)
@@ -206,6 +206,32 @@ flowchart LR
 
 ---
 
+## ⚡ 4 High-Impact Interactive Cybersecurity Features
+
+TraceGuard elevates web privacy auditing from static reports into an ultra-slick, dynamic developer intelligence experience:
+
+### 1. 🧪 Interactive Privacy & Redaction Sandbox (`/sandbox`)
+- Test real in-browser `@traceguard/analyzer`, `@traceguard/tracker-classifier`, and `@traceguard/scoring-engine` modules without installing the extension.
+- Experiment with live presets (`Ad-Heavy Media Portal`, `Privacy-Conscious Developer Blog`, `Corporate SSO Portal`) or input custom URLs with secret tokens (`?token=`, `?auth=`, `?jwt=`, `?session=`).
+- Real-time split-screen: Raw Browser Signals on the left, Sanitized Redacted Payload (`[REDACTED]` highlighted) + Live Base-100 Score Ring on the right.
+
+### 2. 🌌 Interactive 3rd-Party Domain Constellation Map (Scans Deep-Dive)
+- Embedded in `/dashboard/scans/[id]` Network Tab.
+- Radial SVG network topology visualizer mapping the 1st-party origin host in the center with animated telemetry orbit lines connecting to third-party domains.
+- Color-coded by tracker taxonomy (Advertising = Amber, Analytics = Sky Blue, Session Replay = Rose, Social = Purple, CDN/Payment = Emerald).
+- Click any orbiting node to inspect observed requests, HTTPS status, and tracker rule matches.
+
+### 3. 🎯 "What-If" Remediation Score Simulator (Score & Rules Tab)
+- Embedded in `/dashboard/scans/[id]` Score & Rules Tab.
+- Dynamically analyzes the scan's findings and generates actionable remediation toggles (e.g. *Upgrade Insecure HTTP Subresources*, *Deactivate Session Replay Telemetry*, *Enforce SameSite=Strict & Secure Flags*).
+- Users check/uncheck potential fixes and watch the simulated Base-100 Score Ring and category deduction bars calculate projected score gains in real time (e.g., `+34 pts improvement: 48 → 82`).
+
+### 4. ⌨️ Global `Ctrl+K` / `⌘K` Command Palette & Shareable Security Posture Card
+- **Raycast/Linear Command Palette**: Accessible via `Ctrl+K` / `⌘K` or the navbar search trigger. Quick search scans, jump to `/sandbox`, navigate views, switch light/dark theme.
+- **Shareable Posture Card**: 1-click modal inside `/dashboard/scans/[id]` rendering a cyber-minimalist posture summary card with **Copy Markdown Badge** (Shields.io compliant) and **Copy Summary JSON** for PRs and security audits.
+
+---
+
 ## 🗂️ Monorepo Directory Layout
 
 ```text
@@ -263,11 +289,12 @@ TraceGuard/
 
 ## 🚀 Quickstart & Installation
 
-### Option 1: Live Web App (Zero Setup)
+### Option 1: Live Web App & Sandbox (Zero Setup)
 
 Experience TraceGuard immediately in your browser on Vercel:
 
-👉 **[https://tracegu4rd.vercel.app](https://tracegu4rd.vercel.app)**
+👉 **[https://tracegu4rd.vercel.app](https://tracegu4rd.vercel.app)**  
+👉 **[https://tracegu4rd.vercel.app/sandbox](https://tracegu4rd.vercel.app/sandbox)** (Interactive Privacy Playground)
 
 1. Navigate to **[https://tracegu4rd.vercel.app/login](https://tracegu4rd.vercel.app/login)**.
 2. Click **"1-Click Evaluator Demo"** (or use `demo@traceguard.local` / `TraceGuardDemo!2026`).
@@ -276,7 +303,7 @@ Experience TraceGuard immediately in your browser on Vercel:
    - `shop.example` (Score: 68 · Moderate Risk · Session Replay)
    - `blog.example` (Score: 94 · Minimal Risk · Strictly Isolated)
    - `portal.example` (Score: 81 · Low Risk · Authenticated Session)
-4. Test the **Side-by-Side Comparison tool**, **Analytics radar charts**, and **Export JSON / CSV reports**.
+4. Test the **Interactive Sandbox**, **Domain Constellation Map**, **What-If Remediation Simulator**, **Side-by-Side Comparison tool**, and **Export JSON / CSV reports**.
 
 ---
 

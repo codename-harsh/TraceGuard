@@ -31,6 +31,7 @@ import {
   HelpCircle,
   Activity,
   RefreshCw,
+  Share2,
 } from 'lucide-react';
 import {
   BarChart,
@@ -42,6 +43,9 @@ import {
   Cell,
   CartesianGrid,
 } from 'recharts';
+import { DomainConstellationMap } from '@/components/scan/DomainConstellationMap';
+import { WhatIfScoreSimulator } from '@/components/scan/WhatIfScoreSimulator';
+import { SharePostureCardModal } from '@/components/scan/SharePostureCardModal';
 
 export default function ScanDetailPage() {
   const params = useParams();
@@ -52,6 +56,7 @@ export default function ScanDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isExporting, setIsExporting] = useState(false);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
 
   // Timeline filter state
   const [timelineFilter, setTimelineFilter] = useState<'ALL' | 'REQUEST' | 'COOKIE' | 'PERMISSION' | 'FINDING'>('ALL');
@@ -287,14 +292,13 @@ export default function ScanDetailPage() {
               showDetails={true}
             />
 
-            {/* Export Toolbar Buttons */}
-            <div className="flex flex-col gap-2 no-print">
+            <div className="flex flex-col gap-2">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={handleExportJson}
                 disabled={isExporting}
-                className="text-xs h-8 gap-1.5 w-36 justify-start"
+                className="text-xs h-8 gap-1.5 w-40 justify-start"
               >
                 <FileJson className="w-3.5 h-3.5 text-indigo-400" />
                 <span>Export JSON</span>
@@ -305,17 +309,27 @@ export default function ScanDetailPage() {
                 size="sm"
                 onClick={handleExportCsv}
                 disabled={isExporting}
-                className="text-xs h-8 gap-1.5 w-36 justify-start"
+                className="text-xs h-8 gap-1.5 w-40 justify-start"
               >
                 <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-400" />
                 <span>Export CSV</span>
               </Button>
 
               <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShareModalOpen(true)}
+                className="text-xs h-8 gap-1.5 w-40 justify-start border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/10"
+              >
+                <Share2 className="w-3.5 h-3.5 text-indigo-400" />
+                <span>Share Posture Card</span>
+              </Button>
+
+              <Button
                 variant="secondary"
                 size="sm"
                 onClick={handlePrint}
-                className="text-xs h-8 gap-1.5 w-36 justify-start"
+                className="text-xs h-8 gap-1.5 w-40 justify-start"
               >
                 <Printer className="w-3.5 h-3.5 text-zinc-300" />
                 <span>Print PDF Summary</span>
@@ -437,7 +451,13 @@ export default function ScanDetailPage() {
         </TabsContent>
 
         {/* TAB 2: NETWORK */}
-        <TabsContent value="network" className="space-y-4">
+        <TabsContent value="network" className="space-y-6">
+          {/* Interactive Domain Constellation Map */}
+          <DomainConstellationMap
+            firstPartyHost={scan.hostname}
+            scanDomains={scan.scan_domains}
+          />
+
           <Card className="border-zinc-800 bg-zinc-900/80">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm">
@@ -833,8 +853,18 @@ export default function ScanDetailPage() {
               </div>
             </Card>
           </div>
+
+          {/* Interactive What-If Remediation Simulator */}
+          <WhatIfScoreSimulator scan={scan} />
         </TabsContent>
       </Tabs>
+
+      {/* Share Posture Card Modal */}
+      <SharePostureCardModal
+        isOpen={shareModalOpen}
+        onClose={() => setShareModalOpen(false)}
+        scan={scan}
+      />
     </div>
   );
 }

@@ -43,9 +43,18 @@ importers:
       '@tanstack/react-query':
         specifier: ^5.51.1
         version: 5.105.0(@types/react@18.3.31)(react@18.3.1)
+      '@traceguard/analyzer':
+        specifier: workspace:*
+        version: link:../../packages/analyzer
+      '@traceguard/scoring-engine':
+        specifier: workspace:*
+        version: link:../../packages/scoring-engine
       '@traceguard/shared-types':
         specifier: workspace:*
         version: link:../../packages/shared-types
+      '@traceguard/tracker-classifier':
+        specifier: workspace:*
+        version: link:../../packages/tracker-classifier
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
