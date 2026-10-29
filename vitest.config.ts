@@ -5,6 +5,7 @@ export default defineConfig({
   resolve: {
     extensions: ['.ts', '.tsx', '.js', '.jsx', '.json'],
     alias: {
+      '@': path.resolve('./apps/dashboard/src'),
       '@traceguard/shared-types': path.resolve('./packages/shared-types/src/index.ts'),
       '@traceguard/analyzer': path.resolve('./packages/analyzer/src/index.ts'),
       '@traceguard/tracker-classifier': path.resolve('./packages/tracker-classifier/src/index.ts'),
