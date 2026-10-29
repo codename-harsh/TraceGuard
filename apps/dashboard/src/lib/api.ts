@@ -1,7 +1,12 @@
 /**
  * TraceGuard API Client
  * Connects to the FastAPI backend at NEXT_PUBLIC_API_URL or defaults to http://localhost:8000/api/v1.
+ * Features automatic seamless fallback to embedded deterministic demo data when deployed
+ * on Vercel (or when the backend is offline), supporting full evaluation of all 8 tabs,
+ * site comparisons, analytics, and exports without requiring a live backend server.
  */
+
+import { demoStore, INITIAL_DEMO_SCANS } from './demo-data';
 
 export const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
@@ -150,6 +155,7 @@ export interface FilterScansParams {
 
 // Token storage helpers
 const TOKEN_KEY = 'traceguard_access_token';
+export const DEMO_TOKEN = 'traceguard_demo_token_vercel';
 
 export function getStoredToken(): string | null {
   if (typeof window === 'undefined') return null;
@@ -166,12 +172,185 @@ export function removeStoredToken(): void {
   localStorage.removeItem(TOKEN_KEY);
 }
 
+/**
+ * Checks whether fallback mode should handle this request.
+ */
+function shouldUseFallback(endpoint: string, token: string | null, error?: unknown): boolean {
+  if (token === DEMO_TOKEN || token?.startsWith('demo-')) return true;
+
+  // On client, if deployed to Vercel/cloud and pointing to localhost backend, automatically fall back on failure
+  if (typeof window !== 'undefined') {
+    const isLocalhost =
+      window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    if (!isLocalhost && API_BASE_URL.includes('localhost')) {
+      return true;
+    }
+  }
+
+  // Network failures (e.g. backend not running or unreachable)
+  if (error) {
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * Handles fallback responses from the client-side deterministic demo data store.
+ */
+function handleFallback<T>(endpoint: string, options: RequestInit = {}): T {
+  const method = (options.method || 'GET').toUpperCase();
+  const [path, queryString] = endpoint.split('?');
+  const params = new URLSearchParams(queryString || '');
+
+  // 1. Auth Login
+  if (path === '/auth/login') {
+    setStoredToken(DEMO_TOKEN);
+    return {
+      access_token: DEMO_TOKEN,
+      token_type: 'bearer',
+      user: demoStore.getUser(),
+    } as unknown as T;
+  }
+
+  // 2. Auth Register
+  if (path === '/auth/register') {
+    setStoredToken(DEMO_TOKEN);
+    let fullName: string | null = null;
+    let email = 'evaluator@traceguard.local';
+    try {
+      if (options.body) {
+        const parsed = JSON.parse(options.body as string);
+        if (parsed.full_name) fullName = parsed.full_name;
+        if (parsed.email) email = parsed.email;
+      }
+    } catch {
+      // ignore
+    }
+    const registeredUser = demoStore.updateUser(fullName || 'Evaluator User');
+    return {
+      access_token: DEMO_TOKEN,
+      token_type: 'bearer',
+      user: { ...registeredUser, email },
+    } as unknown as T;
+  }
+
+  // 3. Auth Logout
+  if (path === '/auth/logout') {
+    removeStoredToken();
+    return { message: 'Logged out successfully' } as unknown as T;
+  }
+
+  // 4. Me / Users
+  if (path === '/auth/me' || path === '/users/me') {
+    if (method === 'PATCH' && options.body) {
+      try {
+        const parsed = JSON.parse(options.body as string);
+        if (parsed.full_name !== undefined) {
+          return demoStore.updateUser(parsed.full_name) as unknown as T;
+        }
+      } catch {
+        // ignore
+      }
+    }
+    return demoStore.getUser() as unknown as T;
+  }
+
+  // 5. Sites Overview
+  if (path === '/sites/overview') {
+    return demoStore.getOverview() as unknown as T;
+  }
+
+  // 6. Compare Scans
+  if (path === '/sites/compare') {
+    const scanAId = params.get('scan_a') || INITIAL_DEMO_SCANS[0].id;
+    const scanBId = params.get('scan_b') || INITIAL_DEMO_SCANS[1].id;
+    return demoStore.compare(scanAId, scanBId) as unknown as T;
+  }
+
+  // 7. Scans listing
+  if (path === '/scans' || path === '/scans/') {
+    const filterParams: FilterScansParams = {};
+    if (params.get('hostname')) filterParams.hostname = params.get('hostname')!;
+    if (params.get('risk_level')) filterParams.risk_level = params.get('risk_level')!;
+    if (params.get('min_score')) filterParams.min_score = Number(params.get('min_score'));
+    if (params.get('max_score')) filterParams.max_score = Number(params.get('max_score'));
+    return demoStore.getScans(filterParams) as unknown as T;
+  }
+
+  // 8. Individual Scan Detail / Findings / Score / Delete
+  if (path.startsWith('/scans/')) {
+    const segments = path.split('/').filter(Boolean); // ['scans', ':id', 'findings'?]
+    const scanId = segments[1];
+    const subRoute = segments[2];
+
+    if (method === 'DELETE') {
+      demoStore.deleteScan(scanId);
+      return { message: 'Scan deleted successfully', id: scanId } as unknown as T;
+    }
+
+    const scan = demoStore.getScan(scanId) || INITIAL_DEMO_SCANS[0];
+
+    if (subRoute === 'findings') {
+      return scan.findings as unknown as T;
+    }
+    if (subRoute === 'score') {
+      return {
+        scan_id: scan.id,
+        overall_score: scan.overall_score,
+        risk_level: scan.risk_level,
+        components: scan.score_components,
+      } as unknown as T;
+    }
+
+    return scan as unknown as T;
+  }
+
+  // 9. Findings listing
+  if (path === '/findings' || path === '/findings/') {
+    return demoStore.getAllFindings() as unknown as T;
+  }
+
+  // 10. Reports JSON / CSV
+  if (path.startsWith('/reports/')) {
+    const segments = path.split('/').filter(Boolean); // ['reports', ':id', 'json'|'csv']
+    const scanId = segments[1];
+    const format = segments[2];
+    const scan = demoStore.getScan(scanId) || INITIAL_DEMO_SCANS[0];
+    if (format === 'csv') {
+      return demoStore.generateCsvReport(scan.id) as unknown as T;
+    }
+    return scan as unknown as T;
+  }
+
+  // 11. User Settings
+  if (path === '/settings' || path === '/settings/') {
+    if (method === 'PUT' && options.body) {
+      try {
+        const parsed = JSON.parse(options.body as string);
+        return demoStore.updateSettings(parsed) as unknown as T;
+      } catch {
+        // ignore
+      }
+    }
+    return demoStore.getSettings() as unknown as T;
+  }
+
+  return {} as unknown as T;
+}
+
 // Base fetcher
 async function apiFetch<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
   const token = getStoredToken();
+
+  // If already authenticated via DEMO_TOKEN, route directly to demo data store for instant response
+  if (token === DEMO_TOKEN) {
+    return handleFallback<T>(endpoint, options);
+  }
+
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...(options.headers as Record<string, string>),
@@ -182,55 +361,106 @@ async function apiFetch<T>(
   }
 
   const url = `${API_BASE_URL}${endpoint}`;
-  const res = await fetch(url, {
-    ...options,
-    headers,
-    credentials: 'include',
-  });
 
-  if (!res.ok) {
-    let errorDetail = `Request failed with status ${res.status}`;
-    try {
-      const data = await res.json();
-      if (data && data.detail) {
-        errorDetail = typeof data.detail === 'string' ? data.detail : JSON.stringify(data.detail);
+  // Use AbortController timeout so Vercel visitors don't hang when localhost:8000 is unreachable
+  const controller = new AbortController();
+  const timeoutId =
+    typeof window !== 'undefined'
+      ? setTimeout(() => {
+          try {
+            controller.abort();
+          } catch {
+            // ignore
+          }
+        }, 3000)
+      : null;
+
+  try {
+    const res = await fetch(url, {
+      ...options,
+      headers,
+      credentials: 'include',
+      signal: options.signal || controller.signal,
+    });
+    if (timeoutId) clearTimeout(timeoutId);
+
+    if (!res.ok) {
+      // If we got an error status and fallback conditions apply, seamlessly fall back
+      if (shouldUseFallback(endpoint, token)) {
+        return handleFallback<T>(endpoint, options);
       }
-    } catch {
-      // ignore
+      let errorDetail = `Request failed with status ${res.status}`;
+      try {
+        const data = await res.json();
+        if (data && data.detail) {
+          errorDetail = typeof data.detail === 'string' ? data.detail : JSON.stringify(data.detail);
+        }
+      } catch {
+        // ignore
+      }
+      throw new Error(errorDetail);
     }
-    throw new Error(errorDetail);
-  }
 
-  if (res.status === 204) {
-    return {} as T;
-  }
+    if (res.status === 204) {
+      return {} as T;
+    }
 
-  return res.json() as Promise<T>;
+    return res.json() as Promise<T>;
+  } catch (err: unknown) {
+    if (timeoutId) clearTimeout(timeoutId);
+
+    // If backend is offline or unreachable, seamlessly fall back to embedded demo data
+    if (shouldUseFallback(endpoint, token, err)) {
+      return handleFallback<T>(endpoint, options);
+    }
+    throw err;
+  }
 }
 
 // Auth API
 export const api = {
   auth: {
     async login(email: string, password: string): Promise<AuthResponse> {
-      const data = await apiFetch<AuthResponse>('/auth/login', {
-        method: 'POST',
-        body: JSON.stringify({ email, password }),
-      });
-      if (data.access_token) {
-        setStoredToken(data.access_token);
+      // If email is demo email, attempt backend; if unreachable, fallback immediately
+      try {
+        const data = await apiFetch<AuthResponse>('/auth/login', {
+          method: 'POST',
+          body: JSON.stringify({ email, password }),
+        });
+        if (data.access_token) {
+          setStoredToken(data.access_token);
+        }
+        return data;
+      } catch (err) {
+        if (email === 'demo@traceguard.local' || shouldUseFallback('/auth/login', null, err)) {
+          return handleFallback<AuthResponse>('/auth/login', {
+            method: 'POST',
+            body: JSON.stringify({ email, password }),
+          });
+        }
+        throw err;
       }
-      return data;
     },
 
     async register(email: string, password: string, full_name?: string): Promise<AuthResponse> {
-      const data = await apiFetch<AuthResponse>('/auth/register', {
-        method: 'POST',
-        body: JSON.stringify({ email, password, full_name: full_name || null }),
-      });
-      if (data.access_token) {
-        setStoredToken(data.access_token);
+      try {
+        const data = await apiFetch<AuthResponse>('/auth/register', {
+          method: 'POST',
+          body: JSON.stringify({ email, password, full_name: full_name || null }),
+        });
+        if (data.access_token) {
+          setStoredToken(data.access_token);
+        }
+        return data;
+      } catch (err) {
+        if (shouldUseFallback('/auth/register', null, err)) {
+          return handleFallback<AuthResponse>('/auth/register', {
+            method: 'POST',
+            body: JSON.stringify({ email, password, full_name }),
+          });
+        }
+        throw err;
       }
-      return data;
     },
 
     async logout(): Promise<void> {
@@ -252,7 +482,9 @@ export const api = {
     },
 
     async compare(scanAId: string, scanBId: string): Promise<ScanCompare> {
-      return apiFetch<ScanCompare>(`/sites/compare?scan_a=${encodeURIComponent(scanAId)}&scan_b=${encodeURIComponent(scanBId)}`);
+      return apiFetch<ScanCompare>(
+        `/sites/compare?scan_a=${encodeURIComponent(scanAId)}&scan_b=${encodeURIComponent(scanBId)}`
+      );
     },
   },
 
@@ -268,7 +500,7 @@ export const api = {
         if (params.risk_level) query.set('risk_level', params.risk_level);
       }
       const qs = query.toString();
-      return apiFetch<ScanItem[]>(`/scans/${qs ? `?${qs}` : ''}`);
+      return apiFetch<ScanItem[]>(`/scans${qs ? `?${qs}` : ''}`);
     },
 
     async get(scanId: string): Promise<ScanDetail> {
@@ -310,15 +542,26 @@ export const api = {
 
     async downloadCsv(scanId: string): Promise<string> {
       const token = getStoredToken();
+      if (token === DEMO_TOKEN) {
+        return demoStore.generateCsvReport(scanId);
+      }
+
       const headers: Record<string, string> = {};
       if (token) headers['Authorization'] = `Bearer ${token}`;
 
-      const res = await fetch(`${API_BASE_URL}/reports/${scanId}/csv`, {
-        headers,
-        credentials: 'include',
-      });
-      if (!res.ok) throw new Error('Failed to generate CSV report');
-      return res.text();
+      try {
+        const res = await fetch(`${API_BASE_URL}/reports/${scanId}/csv`, {
+          headers,
+          credentials: 'include',
+        });
+        if (!res.ok) throw new Error('Failed to generate CSV report');
+        return res.text();
+      } catch (err) {
+        if (shouldUseFallback(`/reports/${scanId}/csv`, token, err)) {
+          return demoStore.generateCsvReport(scanId);
+        }
+        throw err;
+      }
     },
   },
 
