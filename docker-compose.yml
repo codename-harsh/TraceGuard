@@ -1,4 +1,12 @@
+# ==============================================================================
+# TraceGuard — Production & Development Docker Compose Stack
+# Components: PostgreSQL 16, FastAPI Backend, Next.js Web Dashboard
+# Note: Chrome Extension runs 100% locally in user browsers (not containerized).
+# ==============================================================================
 services:
+  # ----------------------------------------------------------------------------
+  # 1. PostgreSQL 16 Database
+  # ----------------------------------------------------------------------------
   postgres:
     image: postgres:16-alpine
     container_name: traceguard_postgres
@@ -15,9 +23,12 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 30s
+      start_period: 20s
     restart: unless-stopped
 
+  # ----------------------------------------------------------------------------
+  # 2. FastAPI Backend Service (/api/v1)
+  # ----------------------------------------------------------------------------
   api:
     build:
       context: ./apps/api
@@ -27,32 +38,40 @@ services:
       - "8000:8000"
     environment:
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-traceguard}:${POSTGRES_PASSWORD:-changeme}@postgres:5432/${POSTGRES_DB:-traceguard}
-      SECRET_KEY: ${SECRET_KEY:-dev-secret-change-in-production}
+      SECRET_KEY: ${SECRET_KEY:-dev-secret-change-in-production-must-be-32-chars-long}
       ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-60}
       REFRESH_TOKEN_EXPIRE_DAYS: ${REFRESH_TOKEN_EXPIRE_DAYS:-30}
-      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:3000,chrome-extension://*}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:3000,http://127.0.0.1:3000,chrome-extension://*}
       LOG_LEVEL: ${LOG_LEVEL:-info}
     depends_on:
       postgres:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
     restart: unless-stopped
 
+  # ----------------------------------------------------------------------------
+  # 3. Next.js Web Dashboard Service
+  # ----------------------------------------------------------------------------
   dashboard:
-    image: node:20-alpine
+    build:
+      context: .
+      dockerfile: apps/dashboard/Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000/api/v1}
     container_name: traceguard_dashboard
-    working_dir: /app
-    volumes:
-      - ./apps/dashboard:/app
-      - /app/node_modules
     ports:
       - "3000:3000"
     environment:
-      NEXT_PUBLIC_API_BASE_URL: http://localhost:8000/api/v1
-      NODE_ENV: development
-    command: sh -c "npm install && npm run dev"
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000/api/v1}
+      NODE_ENV: production
+    depends_on:
+      - api
     restart: unless-stopped
-    profiles:
-      - dashboard
 
 volumes:
   postgres_data:
