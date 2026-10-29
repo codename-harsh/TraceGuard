@@ -1,166 +1,318 @@
-# TraceGuard
+<div align="center">
 
-> **See what a website does behind the page.**
->
-> *TraceGuard turns browser privacy and security signals into clear, transparent website intelligence.*
+# 🛡️ TraceGuard
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Vitest](https://img.shields.io/badge/Vitest-144%20Passing-brightgreen)](tests/)
-[![Pytest](https://img.shields.io/badge/Pytest-18%20Passing-brightgreen)](tests/api/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.5-blue)](tsconfig.base.json)
-[![Python](https://img.shields.io/badge/Python-3.12-blue)](apps/api/)
-[![Next.js](https://img.shields.io/badge/Next.js-14%20App%20Router-black)](apps/dashboard/)
+### Web Privacy & Security Intelligence
+**See what a website does behind the page.**
+
+*TraceGuard turns complex browser privacy, network tracking, and storage signals into clear, actionable, neutral website intelligence.*
+
+<br/>
+
+[![Live Demo](https://img.shields.io/badge/Live_Demo-tracegu4rd.vercel.app-7928CA?style=for-the-badge&logo=vercel&logoColor=white)](https://tracegu4rd.vercel.app)
+[![CI Pipeline](https://img.shields.io/badge/CI-Passing-2ea44f?style=for-the-badge&logo=githubactions&logoColor=white)](.github/workflows/ci.yml)
+[![Tests Passing](https://img.shields.io/badge/Tests-162_Passing-brightgreen?style=for-the-badge&logo=vitest&logoColor=white)](tests/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.5-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](tsconfig.base.json)
+[![Python](https://img.shields.io/badge/Python-3.12-3776AB?style=for-the-badge&logo=python&logoColor=white)](apps/api/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?style=for-the-badge&logo=fastapi&logoColor=white)](apps/api/)
+[![Next.js](https://img.shields.io/badge/Next.js-14_App_Router-000000?style=for-the-badge&logo=next.js&logoColor=white)](apps/dashboard/)
+[![Manifest V3](https://img.shields.io/badge/Chrome-Manifest_V3-4285F4?style=for-the-badge&logo=googlechrome&logoColor=white)](apps/extension/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](LICENSE)
+
+<br/>
+
+[**Explore Live Web App**](https://tracegu4rd.vercel.app) • [**Documentation**](docs/) • [**Scoring Model**](docs/scoring-model.md) • [**Privacy Architecture**](PRIVACY.md) • [**Security Policy**](SECURITY.md)
+
+</div>
 
 ---
 
-## 1. System Architecture
+## ⚡ Executive Summary
 
-TraceGuard operates as a **dual-layer, local-first intelligence engine**. By default, all network request interception, eTLD+1 domain extraction, tracker categorization, and score deductions execute **100% locally** in the Chrome MV3 Service Worker sandbox. Optional cloud synchronization to the FastAPI backend is strictly opt-in and triggered solely by explicit user action.
+TraceGuard is a defensive web privacy auditing tool designed to inspect third-party tracking, cookie hygiene, insecure transport, and device permission requests in real-time.
+
+- **100% Local-First Interception**: All observation, eTLD+1 public suffix extraction, classification, and score calculations execute inside the browser sandbox.
+- **Strict Privacy Guarantees**: Raw cookie `.value` strings, `Authorization` headers, and POST bodies are mathematically dropped in memory. Sensitive query parameters (`token`, `auth`, `key`, `secret`, `jwt`) are automatically masked to `[REDACTED]`.
+- **Neutral Analytical Phrasing**: Follows strict objective reporting guidelines. TraceGuard **never** issues alarmist labels like `"MALICIOUS"`, `"SAFE"`, or `"UNSAFE"`. Observations are categorized under standardized risk bands (`MINIMAL`, `LOW`, `MODERATE`, `ELEVATED`, `HIGH`).
+- **Dual-Layer Architecture**: A lightweight **Chrome Manifest V3 Extension** for immediate page audits, paired with a modern **Next.js 14 Dashboard & FastAPI Backend** for cross-site comparisons, historical analytics, and verifiable JSON/CSV reports.
+
+---
+
+## 🏗️ System Architecture
 
 ```mermaid
-graph TD
-    subgraph Browser["Client Browser (Chrome / Chromium)"]
-        TAB["Active Web Page\n(Any Visited Website)"]
-        EXT["TraceGuard MV3 Extension\n(React 18 + Vite + TypeScript)"]
-
-        subgraph LocalAnalysisEngine["Local Analysis Engine (Service Worker)"]
+flowchart TD
+    subgraph ClientBrowser["Client Browser Environment (Chromium Sandbox)"]
+        direction TB
+        TAB["Active Web Page\n(Inspected Website)"]
+        
+        subgraph MV3Extension["TraceGuard MV3 Extension (apps/extension)"]
+            direction TB
             OBS["Observation Layer\n• chrome.webRequest API\n• chrome.cookies API\n• Permissions & Storage APIs"]
-            SAN["Sanitization & Redaction Layer\n• Discard cookie .value strings instantly\n• Mask ?token=, ?key=, ?jwt= → [REDACTED]\n• Scrub Authorization & Cookie headers"]
-            CLS["Tracker Classifier (2,850+ Rules)\n• eTLD+1 Public Suffix Resolution\n• Match: Advertising, Analytics, Replay, CDN"]
-            SCR["Scoring Engine (Base-100 Deduction)\n• 7 Penalty Categories with Strict Caps\n• Standardized Neutral Risk Bands"]
+            
+            subgraph Sanitizer["Sanitization & Redaction Layer (packages/analyzer)"]
+                SAN1["Drop raw cookie .value strings in memory"]
+                SAN2["Mask ?token=, ?key=, ?jwt= → [REDACTED]"]
+                SAN3["Scrub Authorization & Cookie headers"]
+            end
+            
+            subgraph Classifier["Tracker Classifier (packages/tracker-classifier)"]
+                ETLD["Public Suffix (eTLD+1) Parser"]
+                RULES["2,850+ Tracker Domain Catalog\n(DuckDuckGo Radar & Disconnect)"]
+            end
+            
+            subgraph Scoring["Scoring Engine (packages/scoring-engine)"]
+                BASE["Base-100 Deduction Pipeline"]
+                CAPS["7 Category Penalty Caps"]
+            end
+            
+            POPUP["Extension Popup UI\n(0-100 Score Ring · Findings Cards)"]
+            FULLVIEW["10-Tab Audit Fullview\n(Deep Technical Inspector)"]
         end
-
-        POPUP["Extension Popup UI\n• Animated Score Ring (0-100)\n• Risk Badge & Finding Cards\n• Local-Only Audit Retention"]
     end
 
-    subgraph CloudPersistence["Cloud Backend (Optional / User-Authenticated)"]
-        API["FastAPI /api/v1\n(Python 3.12 · Pydantic v2 · SQLAlchemy 2.0)"]
-        DB[("PostgreSQL 16 / SQLite\n• Scans, Cookies Metadata, Permissions\n• User Isolation & Settings")]
+    subgraph CloudStack["Opt-In Cloud Backend (Optional / User-Authenticated)"]
+        direction TB
+        API["FastAPI Backend Service\n(/api/v1 · Python 3.12 · Pydantic v2)"]
+        AUTH["Argon2id Password Hashing\n& HTTP-Only JWT Auth"]
+        DB[("PostgreSQL 16 / SQLite\n• Multi-Tenant User Isolation\n• Scans, Cookies, Domains, Findings")]
     end
 
-    subgraph IntelligenceDashboard["Web Dashboard (apps/dashboard)"]
-        DASH["Next.js 14 Web Dashboard\n(shadcn/ui · Recharts · Dark/Light Themes)"]
+    subgraph IntelligenceUI["Web Intelligence Dashboard (apps/dashboard)"]
+        DASH["Next.js 14 App Router\n(Tailwind CSS · shadcn/ui · Recharts)"]
+        FALLBACK["Client-Side Fallback Engine\n(Embedded Deterministic Demo Mode)"]
     end
 
-    TAB -->|"Network requests, cookies,\npermissions, storage"| OBS
-    OBS -->|"Raw requests & cookie metadata"| SAN
-    SAN -->|"Sanitized metadata\n(Zero values)"| CLS
-    CLS -->|"Classified domains & tracker flags"| SCR
-    SCR -->|"ScoreSummary + Finding cards"| POPUP
-    POPUP -->|"User clicks 'Save Scan'"| API
-    API -->|"Persist sanitized scan"| DB
-    DASH -->|"Fetch scans, overview,\ncomparisons, analytics"| API
-    DB -->|"Aggregated intelligence"| API
+    %% Flow Connections
+    TAB -->|"Raw network beacons,\ncookies, DOM signals"| OBS
+    OBS --> SAN1
+    SAN1 --> SAN2
+    SAN2 --> SAN3
+    SAN3 -->|"Clean sanitized metadata"| ETLD
+    ETLD --> RULES
+    RULES -->|"Domain classifications"| BASE
+    BASE --> CAPS
+    CAPS -->|"ScoreSummary & Finding records"| POPUP
+    POPUP -.->|"Expand Full Audit"| FULLVIEW
+    
+    POPUP ==>|"Explicit User Click: 'Save Scan'"| API
+    API --> AUTH
+    AUTH --> DB
+    
+    DASH -->|"Fetch scans, overview, compare"| API
+    DB -.->|"Aggregated audit records"| API
+    DASH -.->|"If backend unreachable (Vercel)"| FALLBACK
 ```
 
 ---
 
-## 2. Core Feature Matrix
+## 🔒 Privacy Redaction & Opt-In Save Lifecycle
 
-| Capability | Chrome Extension (Local) | Web Dashboard (Cloud-Synced) | Technical Guarantee |
-|---|:---:|:---:|---|
-| **Real-Time Request Auditing** | Yes | Historic | Captures third-party domains and unencrypted HTTP endpoints |
-| **Tracker Classification** | Yes | Historic | 2,850+ domains categorized via DuckDuckGo Radar & Disconnect lists |
-| **Cookie Hygiene Audit** | Yes | Historic | Inspects Secure, HttpOnly, SameSite, and persistence flags |
-| **Cookie Value Redaction** | **Enforced** | **Enforced** | **Raw `.value` strings are mathematically dropped in memory** |
-| **Secret URL Scrubbing** | **Enforced** | **Enforced** | Query keys (`token`, `auth`, `key`, `secret`, `jwt`) masked to `[REDACTED]` |
-| **Site-by-Site Comparison** | No | Yes | Side-by-side Score Rings, tracker deltas, and category penalty charts |
-| **Cross-Scan Analytics** | No | Yes | Prevalence matrix, tracker category distribution, cookie compliance rates |
-| **Neutral Phrasing Model** | **Enforced** | **Enforced** | **Zero alarmist labels**; never uses "SAFE", "UNSAFE", or "MALICIOUS" |
-| **Audit Reports Export** | No | Yes | Download comprehensive JSON & CSV audit reports with limitation disclaimers |
+TraceGuard guarantees that raw credentials or session values never touch storage or travel across the network.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as User / Analyst
+    participant Page as Inspected Website
+    participant Ext as Extension Service Worker
+    participant Engine as Local Classifier & Scoring
+    participant API as FastAPI Cloud Backend (/api/v1)
+    participant DB as PostgreSQL Database
+
+    User->>Page: Navigate to web page
+    Page->>Ext: Dispatch HTTP requests, cookies & permissions
+    
+    Note over Ext: 100% Local In-Memory Scrubbing
+    Ext->>Ext: 1. Discard cookie.value immediately
+    Ext->>Ext: 2. Scrub Authorization, Cookie, Set-Cookie headers
+    Ext->>Ext: 3. Redact secret URL parameters (?token=, ?key= → [REDACTED])
+    
+    Ext->>Engine: Send sanitized metadata
+    Engine->>Engine: Match 2,850+ tracker rules & calculate base-100 score
+    Engine-->>Ext: Return deterministic score & neutral finding indicators
+    Ext->>User: Render real-time Score Ring & Popup findings
+
+    alt User elects to keep audit local
+        Note over User,Ext: Data remains strictly inside local session memory. Zero network transit.
+    else User clicks "Save to Cloud"
+        User->>Ext: Click "Save to Cloud" button
+        Ext->>API: POST /api/v1/scans (Sanitized payload ONLY)
+        Note over API: Backend Validation & Multi-Tenant Scoping
+        API->>API: Assert forbidden fields absent (value, Authorization, raw secrets)
+        API->>DB: INSERT into website_scans (Scoped to authenticated user_id)
+        DB-->>API: Confirm record persistence
+        API-->>Ext: 201 Created (Scan ID)
+        Ext->>User: Display synced cloud indicator
+    end
+```
 
 ---
 
-## 3. Monorepo Structure
+## 📊 Deterministic Base-100 Scoring Model
 
-TraceGuard is structured as a pnpm workspace monorepo:
+Every inspected website starts with **100 baseline points**. Penalties are deducted across seven bounded categories, capped at a maximum of 100 total penalty points:
+
+$$S = \max\left(0, 100 - \sum_{c=1}^{7} \min(D_c, C_c)\right)$$
+
+Where $D_c$ represents total raw deductions calculated for category $c$, and $C_c$ represents the hard category cap.
+
+```mermaid
+flowchart LR
+    subgraph BasePoints["Initial Budget"]
+        BASE["100 Baseline Points"]
+    end
+
+    subgraph Categories["Bounded Penalty Categories (Max Caps)"]
+        C1["Tracker Domains\n(Cap: 25 pts)"]
+        C2["Insecure Transport\n(Cap: 25 pts)"]
+        C3["Persistent 3rd-Party Cookies\n(Cap: 15 pts)"]
+        C4["3rd-Party Request Ratio\n(Cap: 10 pts)"]
+        C5["Cookie Flags Hygiene\n(Cap: 10 pts)"]
+        C6["Sensitive Permissions\n(Cap: 10 pts)"]
+        C7["Storage / DOM Indicators\n(Cap: 5 pts)"]
+    end
+
+    subgraph DeductiveEngine["Aggregation & Clamping"]
+        SUM["Sum of Capped Deductions\nmin(Dc, Cc)"]
+        CLAMP["Score = max(0, 100 - Total Deductions)"]
+    end
+
+    subgraph StandardBands["Neutral Risk Bands"]
+        R1["90–100: MINIMAL\n(Minimal observed risk)"]
+        R2["75–89: LOW\n(Low observed risk)"]
+        R3["55–74: MODERATE\n(Moderate observed risk)"]
+        R4["35–54: ELEVATED\n(Elevated observed risk)"]
+        R5["0–34: HIGH\n(High observed risk)"]
+    end
+
+    BASE --> CLAMP
+    C1 & C2 & C3 & C4 & C5 & C6 & C7 --> SUM
+    SUM --> CLAMP
+    CLAMP --> R1 & R2 & R3 & R4 & R5
+```
+
+### Penalty Category Caps & Deductions
+
+| Category | Cap | Deductions Evaluated |
+|---|:---:|---|
+| **Classified Trackers** | **25 pts** | -18 Session Replay · -15 Fingerprinting · -10 Advertising · -5 Analytics |
+| **Insecure Transport** | **25 pts** | -25 Plaintext HTTP origin · -10 Insecure mixed content resource |
+| **Third-Party Persistent Cookies** | **15 pts** | -10 Cookie lifespan > 180 days · -5 Unpartitioned third-party cookie |
+| **Third-Party Request Concentration**| **10 pts** | -10 Third-party request ratio > 60% · -5 Third-party request ratio > 35% |
+| **Cookie Configuration Issues** | **10 pts** | -5 Missing `Secure` on HTTPS · -3 Missing `HttpOnly` on session cookies |
+| **Privacy-Sensitive Permissions** | **10 pts** | -10 Geolocation / Camera / Microphone · -5 Push notifications prompt |
+| **Storage & DOM Indicators** | **5 pts** | -5 More than 10 tracking identifier keys identified in localStorage |
+
+---
+
+## 🗂️ Monorepo Directory Layout
 
 ```text
 TraceGuard/
 ├── apps/
-│   ├── api/                     # Python 3.12 FastAPI backend (/api/v1, SQLAlchemy 2.0, Pydantic v2)
-│   ├── dashboard/               # Next.js 14 Web Dashboard (App Router, Recharts, Tailwind CSS)
-│   └── extension/               # Chrome Manifest V3 Browser Extension (React 18, Vite, TypeScript)
+│   ├── api/                        # FastAPI Python 3.12 Backend (/api/v1)
+│   │   ├── app/
+│   │   │   ├── core/               # Security, Argon2id, JWT auth, redaction rules
+│   │   │   ├── db/                 # SQLAlchemy 2.0 async engine & session manager
+│   │   │   ├── models/             # Relational ORM models (Users, Scans, Cookies, Domains)
+│   │   │   ├── routers/            # Auth, Scans, Sites, Reports, and Settings endpoints
+│   │   │   └── schemas/            # Pydantic v2 validation and output schemas
+│   │   ├── Dockerfile              # Multi-stage non-root Python production container
+│   │   └── requirements.txt        # Backend dependencies (FastAPI, SQLAlchemy, asyncpg)
+│   ├── dashboard/                  # Next.js 14 Web Intelligence Dashboard (App Router)
+│   │   ├── src/
+│   │   │   ├── app/                # Landing, Login, Scans, Details, Compare, Analytics
+│   │   │   ├── components/         # ScoreRing, CategoryChart, TrackerTable, UI primitives
+│   │   │   └── lib/                # API client & Vercel deterministic fallback store
+│   │   ├── Dockerfile              # Multi-stage Next.js standalone container
+│   │   └── package.json            # Tailwind CSS, shadcn/ui, Recharts, Lucide
+│   └── extension/                  # Chrome Manifest V3 Browser Extension
+│       ├── src/
+│       │   ├── background/         # Service worker, chrome.webRequest interception
+│       │   ├── content/            # Isolated storage & DOM API probe
+│       │   ├── popup/              # React 18 toolbar popup (ScoreRing, findings)
+│       │   └── fullview/           # 10-tab technical deep-dive audit view
+│       ├── manifest.json           # Manifest V3 configuration with strict permissions
+│       └── vite.config.ts          # Vite multi-page Chrome extension build bundle
 ├── packages/
-│   ├── analyzer/                # eTLD+1 domain parsing, URL sanitizer, and query redactor
-│   ├── scoring-engine/          # Deterministic base-100 weighted deduction scoring algorithm
-│   ├── shared-types/            # Zod schemas and TypeScript interfaces shared across apps
-│   ├── tracker-classifier/      # 2,850+ rule tracker catalog with category matching
-│   └── ui/                      # Shared design tokens and Tailwind component foundations
+│   ├── analyzer/                   # eTLD+1 domain extraction & query redaction engine
+│   ├── scoring-engine/             # Deterministic base-100 scoring algorithm & caps
+│   ├── shared-types/               # Zod validation schemas & TypeScript contracts
+│   ├── tracker-classifier/         # 2,850+ rule catalog (DuckDuckGo & Disconnect)
+│   └── ui/                         # Design tokens, calm cybersecurity color system
 ├── database/
-│   ├── migrations/              # Alembic database migrations (001_initial_schema.py)
-│   └── seeds/                   # Deterministic demo seeder (demo@traceguard.local + 4 scans)
+│   ├── migrations/                 # Alembic database migration revisions
+│   └── seeds/                      # Deterministic demo seeder (demo@traceguard.local + 4 scans)
 ├── tests/
-│   ├── api/                     # Pytest suite (auth, scans, sites, reports, security isolation)
-│   ├── dashboard/               # Vitest component & calculation tests (bands, formatting, deltas)
-│   ├── e2e/                     # Playwright E2E suite (journeys, demo mode, comparison, tabs)
-│   ├── extension/               # Vitest unit tests (sanitizer, classifier, domain extraction)
-│   └── scoring/                 # Vitest scoring engine boundary & penalty deduction tests
-├── scripts/                     # Cross-platform helper scripts (Windows PowerShell & Unix)
-├── docker-compose.yml           # PostgreSQL 16, FastAPI backend, and Next.js dashboard stack
-├── Makefile                     # Root development commands
-└── vitest.config.ts             # Workspace-wide Vitest configuration
+│   ├── api/                        # Pytest suite (Auth, Scans, Reports, Security Redaction)
+│   ├── dashboard/                  # Vitest dashboard component & risk band calculation tests
+│   ├── e2e/                        # Playwright E2E test suite (Full user journeys & export)
+│   ├── extension/                  # Vitest extension tests (Sanitizer, classifier, domains)
+│   └── scoring/                    # Vitest scoring engine boundary & penalty deduction tests
+├── scripts/                        # Cross-platform runner scripts (Windows & POSIX)
+├── .github/workflows/ci.yml        # GitHub Actions CI matrix (Lint, Tests, Builds, Docker)
+├── docker-compose.yml              # Complete stack (Postgres 16 + FastAPI + Next.js)
+├── Makefile                        # GNU Make developer entry points
+├── README.md                       # Master product documentation
+├── PRIVACY.md                      # Technical privacy model & redaction guarantees
+└── SECURITY.md                     # Vulnerability disclosure & defensive boundaries
 ```
 
 ---
 
-## 4. Scoring Methodology & Standardized Risk Bands
+## 🚀 Quickstart & Installation
 
-TraceGuard evaluates websites on a deterministic **0 to 100** score scale. Every website starts with **100 baseline points**. Penalties are deducted across seven bounded categories, capped at a maximum of 100 total penalty points:
+### Option 1: Live Web App (Zero Setup)
 
-| Penalty Category | Max Cap | Description |
-|---|:---:|---|
-| **Classified Trackers** | 25 pts | Deducted based on tracker prevalence and categories (Session Replay, Advertising, Analytics) |
-| **Insecure Transport** | 25 pts | Deducted for mixed HTTP content or unencrypted request endpoints |
-| **Third-Party Persistent Cookies** | 15 pts | Deducted for tracking cookies set across third-party boundaries with long expiration |
-| **Third-Party Request Concentration** | 10 pts | Deducted when more than 35% of total page requests cross the first-party boundary |
-| **Cookie Configuration Issues** | 10 pts | Deducted for cookies missing `Secure` or `HttpOnly` flags |
-| **Privacy-Sensitive Permissions** | 10 pts | Deducted for requesting Geolocation, Camera, Microphone, or Notifications |
-| **Storage & DOM Indicators** | 5 pts | Deducted for extensive access to localStorage or sessionStorage tracking keys |
-| **Total Possible Deduction** | **100 pts** | Minimum score is clamped at 0 |
+Experience TraceGuard immediately in your browser on Vercel:
 
-### Standardized Risk Bands
+👉 **[https://tracegu4rd.vercel.app](https://tracegu4rd.vercel.app)**
 
-Scores fall into standardized, neutral analytical risk bands as required by [`GEMINI.md`](GEMINI.md):
-
-| Score Range | Risk Band | Official Phrasing |
-|:---:|:---:|---|
-| **90 – 100** | `MINIMAL` | Minimal observed risk |
-| **75 – 89** | `LOW` | Low observed risk |
-| **55 – 74** | `MODERATE` | Moderate observed risk |
-| **35 – 54** | `ELEVATED` | Elevated observed risk |
-| **0 – 34** | `HIGH` | High observed risk |
+1. Navigate to **[https://tracegu4rd.vercel.app/login](https://tracegu4rd.vercel.app/login)**.
+2. Click **"1-Click Evaluator Demo"** (or use `demo@traceguard.local` / `TraceGuardDemo!2026`).
+3. Instantly explore seeded scans:
+   - `news.example` (Score: 48 · Elevated Risk · 5 Trackers)
+   - `shop.example` (Score: 68 · Moderate Risk · Session Replay)
+   - `blog.example` (Score: 94 · Minimal Risk · Strictly Isolated)
+   - `portal.example` (Score: 81 · Low Risk · Authenticated Session)
+4. Test the **Side-by-Side Comparison tool**, **Analytics radar charts**, and **Export JSON / CSV reports**.
 
 ---
 
-## 5. Quickstart & Installation Guide
+### Option 2: Install Chrome Extension (Local Unpacked)
 
-### Prerequisites
-- **Node.js**: `v20.0.0` or higher
-- **pnpm**: `v9.0.0` or higher (`pnpm.cmd` on Windows PowerShell)
-- **Python**: `v3.12` or higher (with virtual environment in `apps/api/.venv`)
-- **Docker**: (Optional) Docker Desktop 24+ for containerized deployment
+1. Clone the repository and build the extension:
+   ```bash
+   git clone https://github.com/codename-harsh/TraceGuard.git
+   cd TraceGuard
+   pnpm install
+   pnpm --filter @traceguard/extension build
+   ```
+2. Open Google Chrome or Brave and go to `chrome://extensions`.
+3. Enable **Developer mode** (toggle in the top-right corner).
+4. Click **Load unpacked** and select the folder:
+   ```text
+   TraceGuard/apps/extension/dist
+   ```
+5. Pin **TraceGuard** to your toolbar. Browse to any website to see real-time privacy signals.
+
+*(Alternatively, download [`traceguard-extension-v1.0.0.zip`](traceguard-extension-v1.0.0.zip) from the repository root, unzip it, and load it into Chrome.)*
 
 ---
 
-### Step 1: Clone and Install Dependencies
+### Option 3: Full-Stack Local Development
 
-```bash
-git clone https://github.com/traceguard/traceguard.git
-cd TraceGuard
+Run the complete stack locally with live API synchronization:
 
-# Install monorepo Node dependencies
-pnpm install
-```
+#### Prerequisites
+- Node.js `20.x`+ and `pnpm`
+- Python `3.12`+ with virtual environment in `apps/api/.venv`
 
----
-
-### Step 2: Setup Python Virtual Environment
-
-```bash
+#### 1. Setup Backend Virtual Environment
+```powershell
 # Windows PowerShell:
 python -m venv apps/api/.venv
-apps/api/.venv/Scripts/python.exe -m pip install --upgrade pip
 apps/api/.venv/Scripts/python.exe -m pip install -r apps/api/requirements.txt
 
 # Linux / macOS:
@@ -169,122 +321,78 @@ source apps/api/.venv/bin/activate
 pip install -r apps/api/requirements.txt
 ```
 
----
-
-### Step 3: Initialize Database & Seed Demo Data
-
-TraceGuard includes a pre-configured database migration and seeding workflow:
-
+#### 2. Run Database Migrations & Seed Demo Records
 ```bash
 # Apply Alembic schema migrations
 pnpm migrate
 
-# Populate Demo Mode evaluator account with 4 deterministic website audits:
+# Populate demo account with 4 sample audits
 pnpm demo
 ```
 
-> **Demo Evaluator Account**:
-> - **Email**: `demo@traceguard.local`
-> - **Password**: `TraceGuardDemo!2026`
-> - **Pre-seeded scans**: `news.example` (score 58), `shop.example` (score 88), `blog.example` (score 76), `portal.example` (score 28)
-
----
-
-### Step 4: Run Development Servers
-
+#### 3. Start Development Servers
 ```bash
-# Starts both FastAPI (:8000) and Next.js Dashboard (:3000) concurrently:
+# Starts FastAPI (:8000) and Next.js (:3000) concurrently:
 pnpm dev
-
-# Or run components individually:
-pnpm dev:api        # Starts FastAPI backend on http://localhost:8000
-pnpm dev:dashboard  # Starts Next.js dashboard on http://localhost:3000
 ```
+- **Dashboard**: [http://localhost:3000](http://localhost:3000)
+- **FastAPI OpenAPI Docs**: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
+- **Backend Healthcheck**: [http://127.0.0.1:8000/health](http://127.0.0.1:8000/health)
 
 ---
 
-### Step 5: Install the Chrome Extension
+### Option 4: Production Docker Stack
 
-1. Build the extension package:
-   ```bash
-   pnpm --filter @traceguard/extension build
-   ```
-2. Open Google Chrome or Chromium browser and navigate to `chrome://extensions`.
-3. Enable **Developer mode** (toggle in the top-right corner).
-4. Click **Load unpacked** and select the folder:
-   ```text
-   <your-repo-path>/apps/extension/dist
-   ```
-5. Pin the TraceGuard shield icon in your browser toolbar. Navigate to any website to observe real-time privacy signals.
-
----
-
-## 6. Docker Container Deployment
-
-Run the complete multi-container stack (PostgreSQL 16, FastAPI backend, Next.js web dashboard):
+Deploy PostgreSQL 16, the FastAPI backend, and Next.js Web Dashboard via Docker Compose:
 
 ```bash
-# Build and start all services
+# Build and run containers in background
 docker compose up -d --build
 
 # View container logs
 docker compose logs -f
 
-# Shut down container stack
+# Stop containers
 docker compose down
 ```
 
-- **Dashboard**: `http://localhost:3000`
-- **FastAPI Documentation**: `http://localhost:8000/docs`
-- **Health Check**: `http://localhost:8000/health`
-
-*(Note: The Chrome Extension runs inside client browsers and is not containerized.)*
-
 ---
 
-## 7. Testing & Verification Suite
+## 🧪 Testing & Quality Assurance
 
-TraceGuard enforces 100% test passing gates across TypeScript and Python:
+TraceGuard maintains rigorous automated verification across 162 total tests:
 
 ```bash
-# 1. Run all TypeScript Vitest tests (144 passing):
+# 1. Run TypeScript Vitest suite (144 tests passing):
 pnpm test
 
-# 2. Run backend FastAPI Pytest tests (18 passing):
+# 2. Run Python FastAPI Pytest suite (18 security & API tests passing):
 pnpm test:api
 
-# 3. Run complete test suites sequentially:
+# 3. Run complete unified test suite:
 pnpm test:all
 
-# 4. Run TypeScript compiler typecheck across all 8 workspace packages:
+# 4. Monorepo TypeScript strict typecheck (0 errors across 8 packages):
 pnpm typecheck
 
-# 5. Build production bundles for Extension and Dashboard:
+# 5. Production bundles build (Extension dist + Dashboard Next.js):
 pnpm build
 
-# 6. Run Playwright End-to-End Suite:
+# 6. Playwright End-to-End Suite:
 pnpm test:e2e
 ```
 
 ---
 
-## 8. Privacy & Security Boundaries
+## 🛡️ Honest Technical Disclaimers
 
-1. **Zero Cookie Value Transmission**: TraceGuard inspects cookie flags (`Secure`, `HttpOnly`, `SameSite`) and domain boundaries. The cookie `.value` string is never read, buffered, displayed, or transmitted.
-2. **Credential & Secret Redaction**: Request headers containing `Authorization`, `Cookie`, or `Set-Cookie` are scrubbed. URL query parameters matching `token`, `auth`, `key`, `secret`, `password`, `session`, `code`, or `jwt` are replaced with `[REDACTED]`.
-3. **No Request Body Interception**: Request payloads and POST bodies are never captured or logged.
-4. **Tenant Isolation**: All database queries strictly scope scan records, findings, and preferences to the authenticated user ID.
-
----
-
-## 9. Product Limitations
-
-- **Client-Side Scope**: Observations are limited to network requests, cookies, and DOM indicators captured while the audited tab is active.
-- **Server-Side Tracking**: TraceGuard cannot inspect backend log analytics or server-to-server forwarding (e.g., Meta Conversions API).
-- **No Legal Compliance Certification**: TraceGuard is a technical auditing and security awareness tool; it does not provide legal guarantees regarding GDPR, CCPA/CPRA, or ePrivacy compliance.
+1. **Defensive Awareness**: TraceGuard is designed to observe and audit web telemetry. It is not an ad blocker or anti-virus tool; it does not tamper with or break page functionality.
+2. **Client-Side Observability**: Analysis captures network and storage activity while the audited tab is active. Lazy-loaded scripts triggered later by complex user interaction may require continuous monitoring.
+3. **No Ingestion of Server-Side Forwarding**: Direct server-to-server forwarding (such as Meta Conversions API or server-side Google Tag Manager) occurs entirely outside the browser environment and cannot be inspected client-side.
+4. **No Legal Certification**: TraceGuard provides technical privacy auditing. It does not constitute formal legal certification for GDPR, CCPA/CPRA, or ePrivacy Directive compliance.
 
 ---
 
-## 10. License
+## 📄 License
 
-TraceGuard is licensed under the [MIT License](LICENSE).
+This project is licensed under the [MIT License](LICENSE).

@@ -351,6 +351,15 @@ async function apiFetch<T>(
     return handleFallback<T>(endpoint, options);
   }
 
+  // When visited on Vercel/production where backend is not running or localhost is unreachable
+  if (typeof window !== 'undefined') {
+    const isLocalhost =
+      window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    if (!isLocalhost && API_BASE_URL.includes('localhost')) {
+      return handleFallback<T>(endpoint, options);
+    }
+  }
+
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...(options.headers as Record<string, string>),
@@ -544,6 +553,13 @@ export const api = {
       const token = getStoredToken();
       if (token === DEMO_TOKEN) {
         return demoStore.generateCsvReport(scanId);
+      }
+      if (typeof window !== 'undefined') {
+        const isLocalhost =
+          window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+        if (!isLocalhost && API_BASE_URL.includes('localhost')) {
+          return demoStore.generateCsvReport(scanId);
+        }
       }
 
       const headers: Record<string, string> = {};
